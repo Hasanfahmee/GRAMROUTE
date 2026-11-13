@@ -197,12 +197,17 @@ def exam_crisis(pct=40):
         f"Exam centre notified: {len(risk)} student(s) arrive up to {max((round(mins[s['village']]-s['exam_mins']) for s in risk if mins[s['village']]),default=0)} min late (flood detour)" if risk else "All exam students arrive on time"],
      "explain":["Cancelled B1 and B2, released their seats, and closed the flooded road in the routing graph.",f"Added {extra} students (+{pct}% demand).","Seated exam students first by earliest exam time, then accessibility needs, then others.","Every vehicle checked for capacity and reachability on the open road graph; travel times are estimates."]}
     audit("exam_crisis",json.dumps({k:out[k] for k in("demand","capacity","seated","unallocated")})); return out
+def page():
+    b=os.path.dirname(os.path.abspath(__file__))
+    for p in (os.path.join(b,"static","kiosk.html"),os.path.join(b,"kiosk.html")):
+        if os.path.exists(p): return open(p,"rb").read()
+    return b"kiosk.html not found: upload it next to server.py"
 class H(BaseHTTPRequestHandler):
     def reply(s,o,ct="application/json"):
         b=o if isinstance(o,bytes) else json.dumps(o).encode(); s.send_response(200); s.send_header("Content-Type",ct); s.end_headers(); s.wfile.write(b)
     def do_GET(s):
         p=s.path.split("?")[0]
-        if p in("/","/demo"): return s.reply(open(os.path.join(os.path.dirname(__file__),"static/"+("kiosk.html")),"rb").read(),"text/html; charset=utf-8")
+        if p in("/","/demo"): return s.reply(page(),"text/html; charset=utf-8")
         if p=="/api/track": return s.reply(track(s.path.split("ref=")[1]))
         if p=="/api/state": return s.reply(state())
         if p=="/api/route": a,b=s.path.split("?")[1].split("&"); return s.reply(route(a.split("=")[1],b.split("=")[1]))
