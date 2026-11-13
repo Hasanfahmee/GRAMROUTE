@@ -1,0 +1,26 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>GRAMROUTE</title>
+<style>:root{--bg:#fff;--fg:#14213d;--ac:#0b6e4f;--card:#eef3f1}@media(prefers-color-scheme:dark){:root{--bg:#10181a;--fg:#e8f0ee;--card:#1b2a2c;--ac:#4cc79b}}
+body{font:18px system-ui,"Noto Sans Devanagari","Noto Sans Kannada",sans-serif;background:var(--bg);color:var(--fg);margin:0;padding:12px}
+button{font:inherit;padding:16px;margin:4px;border:0;border-radius:10px;background:var(--ac);color:#fff;min-width:150px}
+.card{background:var(--card);padding:12px;border-radius:10px;margin:8px 0}nav button{background:var(--card);color:var(--fg)}
+pre{white-space:pre-wrap;font-size:14px}input,select{font:inherit;padding:10px}.bad{color:#c0392b}</style></head><body>
+<h2>GRAMROUTE <small>— No Student Left Stranded</small></h2><div class="card">⚠ ALL DATA IS SIMULATED DEMO DATA · <span id=net></span> · <select id=lang onchange="L()"><option value=en>English</option><option value=hi>हिन्दी</option><option value=kn>ಕನ್ನಡ</option></select></div>
+<nav><button onclick="tab('k')">Kiosk</button><button onclick="tab('a')">Admin</button><button onclick="tab('d')">Demo</button></nav><div id=out class="card"></div>
+<div id=k><div id=btns></div><div class=card>Village <select id=vil><option>Kalpur</option><option>Mudhol</option><option>Hosagram</option></select>
+<button onclick="post('/api/book',{village:vil.value})" id=bk></button><button onclick="route()" id=rt></button></div>
+<div class=card><input id=cmd size=30 placeholder="e.g. My bus has not arrived / seats / route"><button onclick="post('/api/intent',{text:cmd.value})">Ask (typed)</button>
+<small>Text keyword matcher. No voice recognition is implemented.</small></div></div>
+<div id=a style=display:none><div id=m></div><pre id=ad></pre></div>
+<div id=d style=display:none><button onclick="post('/api/sim/bus')">SIMULATE BUS BREAKDOWN</button><button onclick="post('/api/sim/road')">SIMULATE ROAD CLOSURE</button><button onclick="post('/api/sim/surge')">SIMULATE DEMAND SURGE</button><button onclick="post('/api/reset')" style="background:#777">RESET DEMO</button></div>
+<script>
+const T={en:{bus:"Find a Bus",route:"Find a Route",book:"Book seat",rep:"Report a Problem"},hi:{bus:"बस खोजें",route:"रास्ता खोजें",book:"सीट बुक करें",rep:"समस्या बताएं"},kn:{bus:"ಬಸ್ ಹುಡುಕಿ",route:"ಮಾರ್ಗ ಹುಡುಕಿ",book:"ಆಸನ ಕಾಯ್ದಿರಿಸಿ",rep:"ಸಮಸ್ಯೆ ವರದಿ"}};
+const $=i=>document.getElementById(i);
+function L(){const t=T[lang.value];bk.textContent=t.book;rt.textContent=t.route;btns.innerHTML=`<button onclick="st()">${t.bus}</button><button onclick="post('/api/report',{text:prompt('Problem?')||''})">${t.rep}</button>`;localStorage.lang=lang.value}
+function tab(x){for(const i of"kad")$(i).style.display=i==x?"":"none";if(x=="a")st()}
+async function post(u,b){const r=await(await fetch(u,{method:"POST",body:JSON.stringify(b||{})})).json();out.innerHTML="<pre>"+JSON.stringify(r,null,1)+"</pre>";st()}
+async function route(){out.innerHTML="<pre>"+JSON.stringify(await(await fetch("/api/route?from="+vil.value+"&to=College")).json(),null,1)+"</pre>"}
+async function st(){const s=await(await fetch("/api/state")).json();
+m.innerHTML=`<div class=card>Students: ${s.students} · Waiting (no seat): <b class=bad>${s.waiting}</b></div>`+s.vehicles.map(v=>`<div class=card>${v.id} ${v.kind} · ${v.status} · free ${v.free}/${v.cap}</div>`).join("");
+ad.textContent="Blocked roads: "+s.edges.filter(e=>e.blocked).map(e=>e.a+"-"+e.b+" ("+e.why+")")+"\nForecast: "+JSON.stringify(s.forecast)+"\nReports: "+JSON.stringify(s.reports)+"\nAudit: "+JSON.stringify(s.audit)}
+net.textContent=navigator.onLine?"Network detected (not required)":"Offline";lang.value=localStorage.lang||"en";L();
+</script></body></html>
